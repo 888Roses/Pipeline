@@ -1,1 +1,4 @@
-{}
+{
+  "item.pipeline.copper_pipe": "Copper Pipe",
+  "itemgroup.pipeline.pipeline": "Pipeline"
+}

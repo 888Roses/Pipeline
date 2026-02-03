@@ -10,5 +10,6 @@ public class PipelineClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         Pipeline.log.info("PipelineClient#onInitializeClient");
+        geode.register();
     }
 }

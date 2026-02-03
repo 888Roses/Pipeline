@@ -1,6 +1,8 @@
 package dev.rosenoire.pipeline.data;
 
 import dev.rosenoire.pipeline.common.Pipeline;
+import dev.rosenoire.pipeline.common.index.ModItemGroups;
+import dev.rosenoire.pipeline.common.index.ModItems;
 import net.collectively.geode.datagen.GeodeDataGeneration;
 import net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
@@ -18,6 +20,9 @@ public class PipelineDataGenerator implements DataGeneratorEntrypoint {
         @Override
         protected void generate() {
             Pipeline.log.info("PipelineDataGenerator.Generator#generate");
+
+            addItem(ModItems.COPPER_PIPE).autoTranslate();
+            addItemGroup(ModItemGroups.PIPELINE).autoTranslate();
         }
     }
 

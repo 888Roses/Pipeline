@@ -19,15 +19,6 @@
 				"up": {"uv": [0, 0, 16, 8], "rotation": 90, "texture": "#pipe"},
 				"down": {"uv": [0, 8, 16, 0], "rotation": 90, "texture": "#pipe"}
 			}
-		},
-		{
-			"name": "direction",
-			"from": [4, 12.05, 4],
-			"to": [12, 12.05, 12],
-			"rotation": {"angle": 0, "axis": "y", "origin": [4, 12.1, 4]},
-			"faces": {
-				"up": {"uv": [16, 16, 8, 8], "texture": "#pipe"}
-			}
 		}
 	],
 	"display": {
