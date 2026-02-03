@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "pipeline",
+  "version": "${version}",
+  "name": "Pipeline",
+  "description": "",
+  "authors": [],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/pipeline/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-datagen": [
+      "dev.rosenoire.pipeline.data.PipelineDataGenerator"
+    ],
+    "client": [
+      "dev.rosenoire.pipeline.client.PipelineClient"
+    ],
+    "main": [
+      "dev.rosenoire.pipeline.common.Pipeline"
+    ]
+  },
+  "mixins": [
+    "pipeline.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
