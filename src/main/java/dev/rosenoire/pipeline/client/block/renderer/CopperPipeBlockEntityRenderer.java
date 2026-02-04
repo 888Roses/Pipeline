@@ -11,8 +11,13 @@ import net.minecraft.client.render.command.ModelCommandRenderer;
 import net.minecraft.client.render.command.OrderedRenderCommandQueue;
 import net.minecraft.client.render.state.CameraRenderState;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.inventory.Inventory;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.shape.VoxelShape;
+import net.minecraft.world.World;
 import org.jspecify.annotations.Nullable;
 
 public class CopperPipeBlockEntityRenderer implements BlockEntityRenderer<CopperPipeBlockEntity, CopperPipeBlockEntityRenderState> {
@@ -46,14 +51,21 @@ public class CopperPipeBlockEntityRenderer implements BlockEntityRenderer<Copper
 
     @Override
     public void render(CopperPipeBlockEntityRenderState state, MatrixStack matrices, OrderedRenderCommandQueue queue, CameraRenderState cameraState) {
-        double3 pos = new double3(state.pos.toCenterPos()).addY(0.75);
+        double3 pos = new double3(state.pos.toCenterPos());
+        double3 facing = new double3(state.facingDirection.getDoubleVector());
+        Draw.arrow(pos.sub(facing.mul(0.5)), pos.add(facing.mul(0.5)), 0xffff55ff);
+    }
 
-        Draw.arrow(pos, pos.add(state.facingDirection.getDoubleVector()), 0xff5555ff);
+    private void drawBlockShape(World world, BlockPos position) {
+        BlockState blockState = world.getBlockState(position);
+        VoxelShape voxelShape = blockState.getOutlineShape(world, position);
 
-        for (Direction direction : Direction.values()) {
-            if (state.hasContainer(direction)) {
-                Draw.arrow(pos, pos.add(direction.getDoubleVector()), 0xff55ff55);
-            }
+        if (voxelShape.isEmpty()) {
+            return;
         }
+
+        Box boundingBox = voxelShape.getBoundingBox();
+        double3 boundingBoxSize = new double3(boundingBox.getLengthX(), boundingBox.getLengthY(), boundingBox.getLengthZ());
+        Draw.box(new double3(boundingBox.getCenter()), boundingBoxSize.add(0.1), 0xff55ff55);
     }
 }

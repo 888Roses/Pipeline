@@ -1,6 +1,7 @@
 package dev.rosenoire.pipeline.common.block;
 
 import com.mojang.serialization.MapCodec;
+import dev.rosenoire.pipeline.common.index.ModBlockEntities;
 import dev.rosenoire.pipeline.common.index.ModBlocks;
 import dev.rosenoire.pipeline.common.util.PipelineUtil;
 import net.minecraft.block.Block;
@@ -8,6 +9,9 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.BlockWithEntity;
 import net.minecraft.block.ShapeContext;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.BlockEntityTicker;
+import net.minecraft.block.entity.BlockEntityType;
+import net.minecraft.block.entity.HopperBlockEntity;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.BooleanProperty;
@@ -15,9 +19,7 @@ import net.minecraft.state.property.EnumProperty;
 import net.minecraft.state.property.Properties;
 import net.minecraft.util.function.BooleanBiFunction;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.util.shape.VoxelShapes;
@@ -120,18 +122,35 @@ public class CopperPipeBlock extends BlockWithEntity {
     private BlockState getNonNullPlacementState(@NotNull BlockState blockState, ItemPlacementContext ctx) {
         BlockPos position = ctx.getBlockPos();
         World world = ctx.getWorld();
-        return updateContainersInDirection(blockState.with(FACING, ctx.getSide()), world, position);
+
+        Direction facing = ctx.getSide();
+        BlockState supportState = world.getBlockState(position.offset(facing.getOpposite()));
+
+        if (supportState.isOf(ModBlocks.COPPER_PIPE) && supportState.get(FACING) == facing.getOpposite()) {
+            facing = supportState.get(FACING);
+        }
+
+        return updateContainersInDirection(blockState.with(FACING, facing), world, position);
     }
 
     private boolean isContainerInDirection(WorldView world, BlockPos position, Direction inDirection) {
         // The direction cannot be where the pipe comes from. The other directions must lead to containers.
-        return PipelineUtil.isContainer(world, position.offset(inDirection))
-                // TEMPORARY
-                || world.getBlockState(position.offset(inDirection)).isOf(ModBlocks.COPPER_PIPE);
+        return PipelineUtil.isContainer(world, position.offset(inDirection));
     }
 
     @Override
     public @Nullable BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
         return new CopperPipeBlockEntity(pos, state);
+    }
+
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(World world, BlockState state, BlockEntityType<T> type) {
+        return world.isClient() ? null : validateTicker(
+                type, ModBlockEntities.COPPER_PIPE,
+                (world1, blockPos, blockState, blockEntity) -> {
+                    blockEntity.serverTick(world1, blockPos, blockState);
+                }
+        );
     }
 }
