@@ -1,4 +1,5 @@
 {
+  "block.pipeline.copper_pipe": "Copper Pipe",
   "item.pipeline.copper_pipe": "Copper Pipe",
   "itemgroup.pipeline.pipeline": "Pipeline"
 }
