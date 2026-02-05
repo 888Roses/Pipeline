@@ -40,7 +40,7 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
 
     // TODO: Temporary. Change for fields in the Block class directly so different variants of pipe can decide of their speed, etc.
     public static final int ITEM_DELAY = 1;
-    public static final int BATCH_SIZE = 8;
+    public static final int BATCH_SIZE = 1;
 
     public PipeBlockEntity(BlockPos blockPos, BlockState blockState) {
         super(ModBlockEntities.PIPE, blockPos, blockState);
@@ -72,7 +72,7 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
 
     // region Container
 
-    private DefaultedList<ItemStack> heldStacks = DefaultedList.ofSize(5, ItemStack.EMPTY);
+    private DefaultedList<ItemStack> heldStacks = DefaultedList.ofSize(1, ItemStack.EMPTY);
 
     @Override
     protected Text getContainerName() {
