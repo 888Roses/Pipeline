@@ -403,18 +403,6 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
             return;
         }
 
-        int itemCount = 0;
-        for (int i = 0; i < size(); i++) {
-            if (getStack(i).isEmpty()) continue;
-            itemCount += getStack(i).getCount();
-        }
-
-        Draw.text(
-                "Item Count: " + itemCount + " Delay: " + extractItemDelay,
-                new double3(position).add(0.5, 1.25, 0.5),
-                0xffffff55
-        );
-
         if (connectionData.source() != null) {
             Draw.text(
                     "Has Source",
