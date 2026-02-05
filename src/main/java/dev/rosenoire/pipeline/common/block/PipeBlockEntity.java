@@ -365,8 +365,8 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
             );
 
             Draw.arrow(
-                    new double3(connectionData.source().position()).add(0.5, 1.15, 0.5),
-                    new double3(position).add(0.5, 1.15, 0.5),
+                    new double3(connectionData.source().position()).add(0.5, 1.05, 0.5),
+                    new double3(position).add(0.5, 1.05, 0.5),
                     0xff55ff55
             );
 
