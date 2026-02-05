@@ -156,8 +156,12 @@ public class PipeBlock extends BlockWithEntity {
             boolean isClickedBlockInventory = false;
 
             if (clickedBlockState.getBlock() instanceof InventoryProvider) isClickedBlockInventory = true;
-            else if (clickedBlockState.hasBlockEntity() && world.getBlockEntity(clickedBlockPos) instanceof Inventory) {
-                isClickedBlockInventory = true;
+            else if (clickedBlockState.hasBlockEntity()) {
+                BlockEntity blockEntity = world.getBlockEntity(clickedBlockPos);
+
+                if (blockEntity instanceof Inventory && !(blockEntity instanceof PipeBlockEntity)) {
+                    isClickedBlockInventory = true;
+                }
             }
 
             if (!isClickedBlockInventory) {

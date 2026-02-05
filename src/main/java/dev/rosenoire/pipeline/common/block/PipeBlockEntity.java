@@ -37,6 +37,12 @@ import java.util.Optional;
 
 public class PipeBlockEntity extends LockableContainerBlockEntity {
     private int itemCyclingIndex;
+    private int extractItemDelay;
+    private int importItemDelay;
+
+    // TODO: Temporary. Change for fields in the Block class directly so different variants of pipe can decide of their speed, etc.
+    public static final int ITEM_DELAY = 1;
+    public static final int BATCH_SIZE = 8;
 
     public PipeBlockEntity(BlockPos blockPos, BlockState blockState) {
         super(ModBlockEntities.PIPE, blockPos, blockState);
@@ -50,6 +56,8 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
 
         heldStacks = DefaultedList.ofSize(this.size(), ItemStack.EMPTY);
         itemCyclingIndex = view.getInt("itemCyclingIndex", 0);
+        extractItemDelay = view.getInt("itemDelay", 0);
+        importItemDelay = view.getInt("importItemDelay", 0);
     }
 
     @Override
@@ -58,6 +66,8 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
 
         Inventories.writeData(view, this.heldStacks);
         view.putInt("itemCyclingIndex", itemCyclingIndex);
+        view.putInt("itemDelay", extractItemDelay);
+        view.putInt("importItemDelay", importItemDelay);
     }
 
     // endregion
@@ -103,37 +113,54 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
             return;
         }
 
-        retrieveItemsFromSourceContainer(world, position, blockState, connectionData);
+        if (importItemDelay > 0) {
+            importItemDelay--;
+            markDirty();
+        } else {
+            retrieveItemsFromSourceContainer(world, position, blockState, connectionData);
+        }
+
+        if (extractItemDelay > 0) {
+            extractItemDelay--;
+            markDirty();
+            return;
+        }
 
         for (int i = 0; i < size(); i++) {
             ItemStack stack = getStack(i);
 
-            while (!stack.isEmpty()) {
-                ItemStack previousStack = stack.copy();
+            if (stack.isEmpty()) {
+                continue;
+            }
 
-                int connectionIndex = itemCyclingIndex % connectionData.connections().length;
-                itemCyclingIndex++;
+            extractItemDelay += ITEM_DELAY;
+            markDirty();
 
-                InventoryWithPosition connection = connectionData.connections()[connectionIndex];
-                Inventory connectionInventory = getInventory(connection.inventory(), world, connection.position(), connection.getBlockState(world));
+            int connectionIndex = itemCyclingIndex % connectionData.connections().length;
+            itemCyclingIndex++;
+            markDirty();
 
-                // This should only happen when an error occurred so it doesn't matter to break out of the loop here.
-                if (connectionInventory == null) {
-                    break;
-                }
+            InventoryWithPosition connection = connectionData.connections()[connectionIndex];
+            Inventory connectionInventory = getInventory(connection.inventory(), world, connection.position(), connection.getBlockState(world));
 
-                Inventory sourceInventory = getInventory(this, world, position, blockState);
-                extractItems(sourceInventory, connectionInventory, PipeBlock.getForward(blockState).getOpposite());
+            // This should only happen when an error occurred so it doesn't matter to break out of the loop here.
+            if (connectionInventory == null) {
+                break;
+            }
 
-                // If the stack hasn't changed, this means that either it has finished being extracted, or it couldn't be
-                // extracted at all, so we want to break out of the while loop.
-                if (ItemStack.areEqual(getStack(i), previousStack)) {
+            Inventory sourceInventory = getInventory(this, world, position, blockState);
+
+            final int batchSize = math.min(stack.getCount(), BATCH_SIZE);
+            for (int j = 0; j < batchSize; j++) {
+                ItemStack extractedStack = stack.split(1);
+                extractItems(sourceInventory, connectionInventory, extractedStack, i, PipeBlock.getForward(blockState).getOpposite());
+
+                if (stack.isEmpty()) {
                     break;
                 }
             }
 
-            // Don't forget to update this pipe's slot.
-            setStack(i, stack);
+            break;
         }
     }
 
@@ -144,127 +171,141 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
 
         BlockPos sourcePosition = connectionData.source().position();
         BlockState sourceBlockState = connectionData.source().getBlockState(world);
-        Inventory sourceInventoryData = getInventory(connectionData.source().inventory(), world, sourcePosition, sourceBlockState);
-        Inventory destinationInventoryData = getInventory(this, world, position, blockState);
+        Inventory srcInv = getInventory(connectionData.source().inventory(), world, sourcePosition, sourceBlockState);
+        Inventory dstInv = getInventory(this, world, position, blockState);
 
-        extractItems(sourceInventoryData, destinationInventoryData, PipeBlock.getForward(blockState));
-    }
-
-    private void extractItems(Inventory sourceInventory, Inventory destinationInventory, Direction direction) {
-        if (sourceInventory == null || destinationInventory == null) {
+        if (srcInv == null) {
             return;
         }
 
-        for (int sourceSlotIndex = 0; sourceSlotIndex < sourceInventory.size(); sourceSlotIndex++) {
-            // Do not use unavailable slots.
-            ItemStack sourceStack = sourceInventory.getStack(sourceSlotIndex);
+        for (int i = 0; i < srcInv.size(); i++) {
+            ItemStack stack = srcInv.getStack(i);
 
-            // Iterating over the slots in this inventory.
-            for (int destinationSlotIndex = 0; destinationSlotIndex < destinationInventory.size(); destinationSlotIndex++) {
-                ItemStack destinationStack = destinationInventory.getStack(destinationSlotIndex);
+            if (stack.isEmpty()) {
+                continue;
+            }
 
-                // Check if we can extract from the container's slot for blocks like Jukeboxes and chiseled bookshelves.
-                if (!sourceInventory.canTransferTo(destinationInventory, sourceSlotIndex, sourceStack)) {
-                    continue;
-                }
+            importItemDelay += ITEM_DELAY;
+            markDirty();
 
-                // Makes sure we can actually input in it.
-                if (sourceInventory instanceof SidedInventory sidedInventory) {
-                    boolean isAvailableSlot = false;
-                    for (int availableSlot : sidedInventory.getAvailableSlots(direction)) {
-                        if (availableSlot == sourceSlotIndex) {
-                            isAvailableSlot = true;
-                            break;
-                        }
-                    }
+            final int maxSize = math.min(stack.getCount(), BATCH_SIZE);
+            for (int ignored = 0; ignored < maxSize; ignored++) {
+                ItemStack extractedStack = stack.split(1);
+                extractItems(srcInv, dstInv, extractedStack, i, PipeBlock.getForward(blockState));
 
-                    boolean canExtract = sidedInventory.canExtract(sourceSlotIndex, sourceStack, direction);
-
-                    if (sourceInventory == this && Pipeline.DEBUG_PIPE_PERMS) {
-                        Draw.text(
-                                "(" + direction + ") Is Available " + isAvailableSlot + " Can Extract: " + canExtract,
-                                new double3(pos)
-                                        .add(0.5, 1 + destinationSlotIndex * 0.25, 0.5)
-                                        .add(direction.getAxis().isVertical()
-                                                ? Direction.NORTH.getDoubleVector().multiply(0.5)
-                                                : new Vec3d(0, 0, 0)
-                                        ),
-                                0xff55ff55
-                        );
-                    }
-
-                    if (!isAvailableSlot || !canExtract) {
-                        continue;
-                    }
-                }
-
-                if (destinationInventory instanceof SidedInventory sidedInventory) {
-                    boolean isAvailableSlot = false;
-                    for (int availableSlot : sidedInventory.getAvailableSlots(direction)) {
-                        if (availableSlot == destinationSlotIndex) {
-                            isAvailableSlot = true;
-                            break;
-                        }
-                    }
-
-                    boolean canInsert = sidedInventory.canInsert(destinationSlotIndex, sourceStack, direction);
-
-                    if (sourceInventory == this && Pipeline.DEBUG_PIPE_PERMS) {
-                        var fuelRegistry = world == null ? null : world.getFuelRegistry();
-
-                        Draw.text(
-                                "Slot " + destinationSlotIndex + " (" + direction + ") "
-                                        + "Is Available " + isAvailableSlot
-                                        + " Can Insert: " + canInsert
-                                        + " Stack: " + sourceStack
-                                        + " Is Fuel: " + (fuelRegistry == null ? "null" : String.valueOf(fuelRegistry.isFuel(sourceStack))),
-                                new double3(pos)
-                                        .add(0.5, 2 + destinationSlotIndex * 0.25, 0.5)
-                                        .add(direction.getAxis().isVertical()
-                                                ? Direction.NORTH.getDoubleVector().multiply(0.5)
-                                                : new Vec3d(0, 0, 0)
-                                        ),
-                                0xffffff55
-                        );
-                    }
-
-                    if (!isAvailableSlot || !canInsert) {
-                        continue;
-                    }
-                }
-
-                // If the destination stack is empty, we can just set its content to the item stack in the source container.
-                if (destinationStack.isEmpty()) {
-                    // Important to copy otherwise its count will also be set to 0.
-                    destinationInventory.setStack(destinationSlotIndex, sourceStack.copy());
-
-                    sourceStack.setCount(0);
-                    sourceInventory.setStack(sourceSlotIndex, sourceStack);
-
-                    // Next item in the source container.
+                if (stack.isEmpty()) {
                     break;
                 }
+            }
 
-                // If the stacks are the same stack but not full we can stack them.
-                if (ItemStack.areItemsAndComponentsEqual(sourceStack, destinationStack) && destinationStack.getCount() < destinationStack.getMaxCount()) {
-                    int destinationCount = sourceStack.getCount() + destinationStack.getCount();
-                    int remainderCount = destinationCount - destinationStack.getMaxCount();
-                    destinationCount = math.min(destinationCount, destinationStack.getMaxCount());
+            break;
+        }
+    }
 
-                    destinationStack.setCount(destinationCount);
-                    sourceStack.setCount(remainderCount);
+    /// @return whether it was successful or not
+    private boolean extractItems(Inventory sourceInventory, Inventory destinationInventory, ItemStack sourceStack, int sourceSlotIndex, Direction direction) {
+        if (sourceInventory == null || destinationInventory == null) {
+            return false;
+        }
 
-                    destinationInventory.setStack(destinationSlotIndex, destinationStack);
-                    sourceInventory.setStack(sourceSlotIndex, sourceStack);
+        // Iterating over the slots in this inventory.
+        for (int destinationSlotIndex = 0; destinationSlotIndex < destinationInventory.size(); destinationSlotIndex++) {
+            ItemStack destinationStack = destinationInventory.getStack(destinationSlotIndex);
 
-                    // In case the stack has been completely used we can break from it so we can check for the next stack in
-                    // the source container.
-                    if (remainderCount <= 0) {
+            // Check if we can extract from the container's slot for blocks like Jukeboxes and chiseled bookshelves.
+            if (!sourceInventory.canTransferTo(destinationInventory, sourceSlotIndex, sourceStack)) {
+                continue;
+            }
+
+            // Makes sure we can actually input in it.
+            if (sourceInventory instanceof SidedInventory sidedInventory) {
+                boolean isAvailableSlot = false;
+                for (int availableSlot : sidedInventory.getAvailableSlots(direction)) {
+                    if (availableSlot == sourceSlotIndex) {
+                        isAvailableSlot = true;
                         break;
                     }
                 }
+
+                boolean canExtract = sidedInventory.canExtract(sourceSlotIndex, sourceStack, direction);
+
+                if (sourceInventory == this && Pipeline.DEBUG_PIPE_PERMS) {
+                    Draw.text(
+                            "(" + direction + ") Is Available " + isAvailableSlot + " Can Extract: " + canExtract,
+                            new double3(pos)
+                                    .add(0.5, 1 + destinationSlotIndex * 0.25, 0.5)
+                                    .add(direction.getAxis().isVertical()
+                                            ? Direction.NORTH.getDoubleVector().multiply(0.5)
+                                            : new Vec3d(0, 0, 0)
+                                    ),
+                            0xff55ff55
+                    );
+                }
+
+                if (!isAvailableSlot || !canExtract) {
+                    continue;
+                }
+            }
+
+            if (destinationInventory instanceof SidedInventory sidedInventory) {
+                boolean isAvailableSlot = false;
+                for (int availableSlot : sidedInventory.getAvailableSlots(direction)) {
+                    if (availableSlot == destinationSlotIndex) {
+                        isAvailableSlot = true;
+                        break;
+                    }
+                }
+
+                boolean canInsert = sidedInventory.canInsert(destinationSlotIndex, sourceStack, direction);
+
+                if (sourceInventory == this && Pipeline.DEBUG_PIPE_PERMS) {
+                    var fuelRegistry = world == null ? null : world.getFuelRegistry();
+
+                    Draw.text(
+                            "Slot " + destinationSlotIndex + " (" + direction + ") "
+                                    + "Is Available " + isAvailableSlot
+                                    + " Can Insert: " + canInsert
+                                    + " Stack: " + sourceStack
+                                    + " Is Fuel: " + (fuelRegistry == null ? "null" : String.valueOf(fuelRegistry.isFuel(sourceStack))),
+                            new double3(pos)
+                                    .add(0.5, 2 + destinationSlotIndex * 0.25, 0.5)
+                                    .add(direction.getAxis().isVertical()
+                                            ? Direction.NORTH.getDoubleVector().multiply(0.5)
+                                            : new Vec3d(0, 0, 0)
+                                    ),
+                            0xffffff55
+                    );
+                }
+
+                if (!isAvailableSlot || !canInsert) {
+                    continue;
+                }
+            }
+
+            // If the destination stack is empty, we can just set its content to the item stack in the source container.
+            if (destinationStack.isEmpty()) {
+                // Important to copy otherwise its count will also be set to 0.
+                destinationInventory.setStack(destinationSlotIndex, sourceStack.copy());
+                sourceStack.setCount(0);
+                return true;
+            }
+
+            // If the stacks are the same but not full we can stack them.
+            if (ItemStack.areItemsAndComponentsEqual(sourceStack, destinationStack) && destinationStack.getCount() < destinationStack.getMaxCount()) {
+                int destinationCount = destinationStack.getCount() + sourceStack.getCount();
+                int remainderCount = destinationCount - destinationStack.getMaxCount();
+                destinationCount = math.min(destinationCount, destinationStack.getMaxCount());
+
+                destinationStack.setCount(destinationCount);
+                sourceStack.setCount(remainderCount);
+
+                if (remainderCount <= 0) {
+                    return true;
+                }
             }
         }
+
+        return false;
     }
 
     public static @Nullable Inventory getInventory(Inventory container, World world, BlockPos position, BlockState blockState) {
@@ -313,6 +354,10 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
                     continue;
                 }
 
+                if (direction == forwardDirection.getOpposite()) {
+                    continue;
+                }
+
                 inventory.map(connections::add);
             }
 
@@ -353,10 +398,22 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
 
     // region Debug
 
-    private static void drawConnections(World world, BlockPos position, BlockState blockState, ConnectionData connectionData) {
+    private void drawConnections(World world, BlockPos position, BlockState blockState, ConnectionData connectionData) {
         if (!Pipeline.DEBUG_PIPE_FLOW) {
             return;
         }
+
+        int itemCount = 0;
+        for (int i = 0; i < size(); i++) {
+            if (getStack(i).isEmpty()) continue;
+            itemCount += getStack(i).getCount();
+        }
+
+        Draw.text(
+                "Item Count: " + itemCount + " Delay: " + extractItemDelay,
+                new double3(position).add(0.5, 1.25, 0.5),
+                0xffffff55
+        );
 
         if (connectionData.source() != null) {
             Draw.text(
