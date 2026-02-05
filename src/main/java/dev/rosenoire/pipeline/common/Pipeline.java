@@ -1,9 +1,6 @@
 package dev.rosenoire.pipeline.common;
 
-import dev.rosenoire.pipeline.common.index.ModBlockEntities;
-import dev.rosenoire.pipeline.common.index.ModBlocks;
-import dev.rosenoire.pipeline.common.index.ModItemGroups;
-import dev.rosenoire.pipeline.common.index.ModItems;
+import dev.rosenoire.pipeline.common.index.*;
 import net.collectively.geode.Geode;
 import net.fabricmc.api.ModInitializer;
 import org.slf4j.Logger;
@@ -25,7 +22,9 @@ public class Pipeline implements ModInitializer {
         ModBlocks.register();
         ModBlockEntities.register();
         ModItems.register();
+        ModDataComponentTypes.register();
         ModItemGroups.register();
+        ModBlockTags.register();
 
         geode.register();
     }

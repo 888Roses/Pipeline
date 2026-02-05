@@ -3,9 +3,13 @@ package dev.rosenoire.pipeline.client.block.renderer;
 import dev.rosenoire.pipeline.common.Pipeline;
 import dev.rosenoire.pipeline.common.block.PipeBlock;
 import dev.rosenoire.pipeline.common.block.PipeBlockEntity;
+import dev.rosenoire.pipeline.common.block.PipeControllerBlockEntity;
 import net.collectively.geode.debug.Draw;
 import net.collectively.geode.types.double3;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
+import net.minecraft.block.ScaffoldingBlock;
+import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.block.entity.BlockEntityRenderer;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactory;
 import net.minecraft.client.render.command.ModelCommandRenderer;
@@ -46,6 +50,21 @@ public class PipeRenderer implements BlockEntityRenderer<PipeBlockEntity, PipeRe
             renderState.setHasContainerInDirection(direction, PipeBlock.hasContainerInDirection(blockState, direction));
         }
 
+        renderState.controllerRenderable = null;
+        if (world != null && blockEntity.hasController()) {
+            PipeControllerBlockEntity pipeController = blockEntity.getControllerBlock(world);
+
+            if (pipeController != null) {
+                renderState.controllerRenderable = RenderableHitbox.get(
+                        world,
+                        pipeController.getPos(),
+                        pipeController.getCachedState(),
+                        0.01f,
+                        0xffffff55
+                );
+            }
+        }
+
         PipeBlockEntity.ConnectionData connectionData = PipeBlockEntity.ConnectionData.get(
                 blockEntity.getWorld(),
                 blockEntity.getPos(),
@@ -79,6 +98,13 @@ public class PipeRenderer implements BlockEntityRenderer<PipeBlockEntity, PipeRe
         for (PipeBlockEntity.InventoryWithPosition connection : connectionData.connections()) {
             renderState.connectionData_connections.add(RenderableConnection.get(world, position, connection));
         }
+
+        if (world != null) {
+            renderState.hasControllerAbove = world.getBlockEntity(position.up()) instanceof PipeControllerBlockEntity;
+
+            BlockState blockBelow = world.getBlockState(position.down());
+            renderState.hasSolidBlockBelow = !blockBelow.isAir() && blockBelow.isSolidBlock(world, position.down());
+        }
     }
 
     @Override
@@ -89,6 +115,16 @@ public class PipeRenderer implements BlockEntityRenderer<PipeBlockEntity, PipeRe
                     new double3(state.pos.toCenterPos()).add(state.facingDirection.getDoubleVector().multiply(0.5)),
                     0xffffff55
             );
+
+            if (state.controllerRenderable != null) {
+                state.controllerRenderable.render();
+
+                Draw.line(
+                        new double3(state.pos.toCenterPos()),
+                        new double3(state.controllerRenderable.position()),
+                        0xffffff55
+                );
+            }
 
             if (state.connectionData_hasSource) {
                 state.connectionData_sourceRenderableHitbox.render();
@@ -109,6 +145,17 @@ public class PipeRenderer implements BlockEntityRenderer<PipeBlockEntity, PipeRe
             for (RenderableConnection connection : state.connectionData_connections) {
                 connection.render();
             }
+        }
+
+        if (state.hasControllerAbove) {
+            queue.submitBlock(
+                    matrices,
+                    Blocks.SCAFFOLDING.getDefaultState()
+                            .with(ScaffoldingBlock.BOTTOM, !state.hasSolidBlockBelow),
+                    state.lightmapCoordinates,
+                    OverlayTexture.DEFAULT_UV,
+                    0x00000000
+            );
         }
     }
 

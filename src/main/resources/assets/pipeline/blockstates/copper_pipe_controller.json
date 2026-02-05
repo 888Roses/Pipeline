@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": {"model": "pipeline:block/copper_pipe_controller"},
+    "facing=south": {"model": "pipeline:block/copper_pipe_controller"},
+    "facing=east": {"model": "pipeline:block/copper_pipe_controller"},
+    "facing=west": {"model": "pipeline:block/copper_pipe_controller"}
+  }
+}

@@ -56,6 +56,8 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
         itemCyclingIndex = view.getInt("itemCyclingIndex", 0);
         extractItemDelay = view.getInt("itemDelay", 0);
         importItemDelay = view.getInt("importItemDelay", 0);
+
+        controllerPosition = view.read("controllerPosition", BlockPos.CODEC).orElse(null);
     }
 
     @Override
@@ -66,6 +68,33 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
         view.putInt("itemCyclingIndex", itemCyclingIndex);
         view.putInt("itemDelay", extractItemDelay);
         view.putInt("importItemDelay", importItemDelay);
+
+        if (hasController()) {
+            view.put("controllerPosition", BlockPos.CODEC, controllerPosition);
+        }
+    }
+
+    // endregion
+
+    // region Controller
+
+    public BlockPos controllerPosition;
+
+    public void setController(BlockPos controllerPosition) {
+        this.controllerPosition = controllerPosition;
+        markDirty();
+    }
+
+    public boolean hasController() {
+        if (controllerPosition == null) {
+            return false;
+        }
+
+        return world != null && world.getBlockEntity(controllerPosition) instanceof PipeControllerBlockEntity;
+    }
+
+    public @Nullable PipeControllerBlockEntity getControllerBlock(World world) {
+        return world.getBlockEntity(controllerPosition) instanceof PipeControllerBlockEntity controller ? controller : null;
     }
 
     // endregion
@@ -99,11 +128,21 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
         return heldStacks.size();
     }
 
+    @Override
+    public boolean isValid(int slot, ItemStack stack) {
+        return !hasController() || getControllerBlock(getWorld()).validate(stack);
+    }
+
     // endregion
 
     // region Behavior
 
     public void serverTick(World world, BlockPos position, BlockState blockState) {
+        if (!hasController() && world.getBlockEntity(position.north()) instanceof PipeControllerBlockEntity) {
+            Draw.text("Has Controller!!", new double3(position.up().up().up().toCenterPos()));
+            setController(position.north());
+        }
+
         ConnectionData connectionData = ConnectionData.get(world, position, blockState);
 
         if (connectionData.connections().length == 0) {
@@ -295,6 +334,10 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
                 if (!isAvailableSlot || !canInsert) {
                     continue;
                 }
+            }
+
+            if (!destinationInventory.isValid(destinationSlotIndex, sourceStack)) {
+                continue;
             }
 
             // If the destination stack is empty, we can just set its content to the item stack in the source container.

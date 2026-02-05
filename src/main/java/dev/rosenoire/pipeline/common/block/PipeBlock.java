@@ -2,6 +2,7 @@ package dev.rosenoire.pipeline.common.block;
 
 import com.mojang.serialization.MapCodec;
 import dev.rosenoire.pipeline.common.index.ModBlockEntities;
+import dev.rosenoire.pipeline.common.index.ModBlockTags;
 import dev.rosenoire.pipeline.common.util.PipelineUtil;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
@@ -195,6 +196,11 @@ public class PipeBlock extends BlockWithEntity {
 
         // Prevents pipes from connecting into each other in a way that it may create very small closed loops.
         BlockState blockStateInDirection = world.getBlockState(inDirectionPosition);
+
+        if (blockStateInDirection.isIn(ModBlockTags.DISALLOWED_PIPE_CONTAINER)) {
+            return false;
+        }
+
         // TODO: Might want to switch to using tags here.
         if (blockStateInDirection.getBlock() instanceof PipeBlock) {
             Direction.Axis blockStateInDirectionForward = getForward(blockStateInDirection).getAxis();
@@ -205,7 +211,7 @@ public class PipeBlock extends BlockWithEntity {
             }
         }
 
-        return world.getBlockEntity(inDirectionPosition) instanceof Inventory;
+        return blockStateInDirection.getBlock() instanceof InventoryProvider || world.getBlockEntity(inDirectionPosition) instanceof Inventory;
     }
 
     /// Returns the direction the pipe block state is facing, or north as a fallback, if the block state is null, air, or
