@@ -22,10 +22,8 @@ import net.minecraft.storage.WriteView;
 import net.minecraft.text.Text;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldView;
 import org.jetbrains.annotations.NotNull;
@@ -107,7 +105,6 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
 
     public void serverTick(World world, BlockPos position, BlockState blockState) {
         ConnectionData connectionData = ConnectionData.get(world, position, blockState);
-        drawConnections(world, position, blockState, connectionData);
 
         if (connectionData.connections().length == 0) {
             return;
@@ -410,71 +407,6 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
         public BlockState getBlockState(WorldView world) {
             return world.getBlockState(position);
         }
-    }
-
-    // endregion
-
-    // region Debug
-
-    private void drawConnections(World world, BlockPos position, BlockState blockState, ConnectionData connectionData) {
-        if (!Pipeline.DEBUG_PIPE_FLOW) {
-            return;
-        }
-
-        if (connectionData.source() != null) {
-            Draw.text(
-                    "Has Source",
-                    new double3(position).add(0.5, 1.5, 0.5)
-            );
-
-            Draw.arrow(
-                    new double3(connectionData.source().position()).add(0.5, 1.05, 0.5),
-                    new double3(position).add(0.5, 1.05, 0.5),
-                    0xff55ff55
-            );
-
-            drawCollisionShape(world, connectionData.source(), 0xff55ff55, 0.015f);
-            drawCollisionShape(world, new InventoryWithPosition(null, position), 0xff55ff55, 0.01f);
-        }
-
-        for (InventoryWithPosition connection : connectionData.connections()) {
-            int color = 0xffffaa55;
-
-            // If the connection is a pipe we want to distinguish it from the "final destinations".
-            // The color is also based on whether the axis of the connection is positive or not.
-            if (!(connection.inventory() instanceof PipeBlockEntity)) {
-                color = 0xff55aaff;
-            }
-
-            drawCollisionShape(world, connection, color, 0.01f);
-
-            Direction direction = Direction.fromVector(connection.position().subtract(position), Direction.NORTH);
-            // color = direction.getOffsetX() > 0 || direction.getOffsetY() > 0 || direction.getOffsetZ() > 0 ? 0xff5555ff : 0xffff5555;
-            color = 0xff5555ff;
-
-            Draw.arrow(
-                    new double3(position).add(0.5, 1.05, 0.5),
-                    new double3(position).add(0.5, 1.05, 0.5).add(direction.getDoubleVector().multiply(0.5)),
-                    color
-            );
-        }
-    }
-
-    private static void drawCollisionShape(World world, InventoryWithPosition inventoryWithPosition, int color, float offset) {
-        drawCollisionShape(world, inventoryWithPosition.position(), inventoryWithPosition.getBlockState(world), color, offset);
-    }
-
-    // TODO: Use the default Geode#drawBlockState instead when it'll be added.
-    private static void drawCollisionShape(World world, BlockPos position, BlockState blockState, int color, float offset) {
-        VoxelShape voxelShape = blockState.getCollisionShape(world, position);
-
-        if (voxelShape.isEmpty()) {
-            return;
-        }
-
-        Box boundingBox = voxelShape.getBoundingBox();
-        double3 boundingBoxSize = new double3(boundingBox.getLengthX(), boundingBox.getLengthY(), boundingBox.getLengthZ());
-        Draw.box(new double3(position).add(boundingBox.getCenter()), boundingBoxSize.add(offset), color);
     }
 
     // endregion

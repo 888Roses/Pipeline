@@ -1,7 +1,16 @@
 package dev.rosenoire.pipeline.client.block.renderer;
 
+import dev.rosenoire.pipeline.common.block.PipeBlockEntity;
+import net.collectively.geode.types.double3;
+import net.minecraft.block.BlockState;
 import net.minecraft.client.render.block.entity.state.BlockEntityRenderState;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class PipeRenderState extends BlockEntityRenderState {
     // Note: Not using a map for performance reasons.
@@ -9,6 +18,13 @@ public class PipeRenderState extends BlockEntityRenderState {
 
     /// What direction that pipe is facing.
     public Direction facingDirection;
+    public PipeBlockEntity.ConnectionData connectionData;
+
+    public boolean connectionData_hasSource;
+    public BlockPos connectionData_sourcePos;
+    public PipeRenderer.RenderableHitbox connectionData_sourceRenderableHitbox;
+    public PipeRenderer.RenderableHitbox connectionData_sourcePipeRenderableHitbox;
+    public final List<PipeRenderer.RenderableConnection> connectionData_connections = new ArrayList<>();
 
     /// Checks whether there is a container block in this direction of the pipe or not.
     public boolean hasContainerInDirection(Direction direction) {
