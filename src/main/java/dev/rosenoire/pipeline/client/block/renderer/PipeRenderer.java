@@ -43,7 +43,7 @@ public class PipeRenderer implements BlockEntityRenderer<PipeBlockEntity, PipeRe
 
     @Override
     public void render(PipeRenderState state, MatrixStack matrices, OrderedRenderCommandQueue queue, CameraRenderState cameraState) {
-        if (Pipeline.DEBUG_PIPE) {
+        if (Pipeline.DEBUG_PIPE_FLOW) {
             double3 pos = new double3(state.pos.toCenterPos());
             double3 facing = new double3(state.facingDirection.getDoubleVector());
             Draw.arrow(pos.sub(facing.mul(0.5)), pos.add(facing.mul(0.5)), 0xffff55ff);

@@ -180,7 +180,7 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
 
                     boolean canExtract = sidedInventory.canExtract(sourceSlotIndex, sourceStack, direction);
 
-                    if (sourceInventory == this && Pipeline.DEBUG_PIPE) {
+                    if (sourceInventory == this && Pipeline.DEBUG_PIPE_PERMS) {
                         Draw.text(
                                 "(" + direction + ") Is Available " + isAvailableSlot + " Can Extract: " + canExtract,
                                 new double3(pos)
@@ -209,7 +209,7 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
 
                     boolean canInsert = sidedInventory.canInsert(destinationSlotIndex, sourceStack, direction);
 
-                    if (sourceInventory == this && Pipeline.DEBUG_PIPE) {
+                    if (sourceInventory == this && Pipeline.DEBUG_PIPE_PERMS) {
                         var fuelRegistry = world == null ? null : world.getFuelRegistry();
 
                         Draw.text(
@@ -354,7 +354,7 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
     // region Debug
 
     private static void drawConnections(World world, BlockPos position, BlockState blockState, ConnectionData connectionData) {
-        if (!Pipeline.DEBUG_PIPE) {
+        if (!Pipeline.DEBUG_PIPE_FLOW) {
             return;
         }
 

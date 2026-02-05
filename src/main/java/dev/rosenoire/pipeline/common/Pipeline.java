@@ -10,7 +10,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Pipeline implements ModInitializer {
-    public static boolean DEBUG_PIPE = true;
+    // TODO: Use custom debug renderers instead, like minecraft does.
+    public static boolean DEBUG_PIPE_PERMS = false;
+    public static boolean DEBUG_PIPE_FLOW = true;
 
     public static final String MOD_ID = "pipeline";
     public static final Geode geode = Geode.create(MOD_ID);
@@ -19,6 +21,7 @@ public class Pipeline implements ModInitializer {
     @Override
     public void onInitialize() {
         log.info("Pipeline#onInitialize");
+
         ModBlocks.register();
         ModBlockEntities.register();
         ModItems.register();
