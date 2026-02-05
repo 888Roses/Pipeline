@@ -115,20 +115,14 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
                 itemCyclingIndex++;
 
                 InventoryWithPosition connection = connectionData.connections()[connectionIndex];
-                InventoryData connectionInventory = InventoryData.get(
-                        connection.inventory(),
-                        world,
-                        connection.position(),
-                        connection.getBlockState(world)
-                );
+                Inventory connectionInventory = getInventory(connection.inventory(), world, connection.position(), connection.getBlockState(world));
 
                 // This should only happen when an error occurred so it doesn't matter to break out of the loop here.
                 if (connectionInventory == null) {
                     break;
                 }
 
-                InventoryData sourceInventory = InventoryData.get(this, world, position, blockState);
-
+                Inventory sourceInventory = getInventory(this, world, position, blockState);
                 extractItems(sourceInventory, connectionInventory, PipeBlock.getForward(blockState).getOpposite());
 
                 // If the stack hasn't changed, this means that either it has finished being extracted, or it couldn't be
@@ -150,36 +144,32 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
 
         BlockPos sourcePosition = connectionData.source().position();
         BlockState sourceBlockState = connectionData.source().getBlockState(world);
-        InventoryData sourceInventoryData = InventoryData.get(connectionData.source().inventory(), world, sourcePosition, sourceBlockState);
-        InventoryData destinationInventoryData = InventoryData.get(this, world, position, blockState);
+        Inventory sourceInventoryData = getInventory(connectionData.source().inventory(), world, sourcePosition, sourceBlockState);
+        Inventory destinationInventoryData = getInventory(this, world, position, blockState);
 
         extractItems(sourceInventoryData, destinationInventoryData, PipeBlock.getForward(blockState));
     }
 
-    private void extractItems(InventoryData sourceInventory, InventoryData destinationInventory, Direction direction) {
+    private void extractItems(Inventory sourceInventory, Inventory destinationInventory, Direction direction) {
         if (sourceInventory == null || destinationInventory == null) {
             return;
         }
 
-        for (int sourceSlotIndex = 0; sourceSlotIndex < sourceInventory.inventory().size(); sourceSlotIndex++) {
+        for (int sourceSlotIndex = 0; sourceSlotIndex < sourceInventory.size(); sourceSlotIndex++) {
             // Do not use unavailable slots.
-            ItemStack sourceStack = sourceInventory.inventory().getStack(sourceSlotIndex);
-            // TODO: ?
-            if (!sourceInventory.canBeExtracted().canExtract(sourceSlotIndex, sourceStack, direction)) {
-                continue;
-            }
+            ItemStack sourceStack = sourceInventory.getStack(sourceSlotIndex);
 
             // Iterating over the slots in this inventory.
-            for (int destinationSlotIndex = 0; destinationSlotIndex < destinationInventory.inventory().size(); destinationSlotIndex++) {
-                ItemStack destinationStack = destinationInventory.inventory().getStack(destinationSlotIndex);
+            for (int destinationSlotIndex = 0; destinationSlotIndex < destinationInventory.size(); destinationSlotIndex++) {
+                ItemStack destinationStack = destinationInventory.getStack(destinationSlotIndex);
 
                 // Check if we can extract from the container's slot for blocks like Jukeboxes and chiseled bookshelves.
-                if (!sourceInventory.inventory().canTransferTo(destinationInventory.inventory(), sourceSlotIndex, sourceStack)) {
+                if (!sourceInventory.canTransferTo(destinationInventory, sourceSlotIndex, sourceStack)) {
                     continue;
                 }
 
                 // Makes sure we can actually input in it.
-                if (sourceInventory.inventory() instanceof SidedInventory sidedInventory) {
+                if (sourceInventory instanceof SidedInventory sidedInventory) {
                     boolean isAvailableSlot = false;
                     for (int availableSlot : sidedInventory.getAvailableSlots(direction)) {
                         if (availableSlot == sourceSlotIndex) {
@@ -190,7 +180,7 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
 
                     boolean canExtract = sidedInventory.canExtract(sourceSlotIndex, sourceStack, direction);
 
-                    if (sourceInventory.inventory() == this && Pipeline.DEBUG_PIPE) {
+                    if (sourceInventory == this && Pipeline.DEBUG_PIPE) {
                         Draw.text(
                                 "(" + direction + ") Is Available " + isAvailableSlot + " Can Extract: " + canExtract,
                                 new double3(pos)
@@ -208,7 +198,7 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
                     }
                 }
 
-                if (destinationInventory.inventory() instanceof SidedInventory sidedInventory) {
+                if (destinationInventory instanceof SidedInventory sidedInventory) {
                     boolean isAvailableSlot = false;
                     for (int availableSlot : sidedInventory.getAvailableSlots(direction)) {
                         if (availableSlot == destinationSlotIndex) {
@@ -219,7 +209,7 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
 
                     boolean canInsert = sidedInventory.canInsert(destinationSlotIndex, sourceStack, direction);
 
-                    if (sourceInventory.inventory() == this && Pipeline.DEBUG_PIPE) {
+                    if (sourceInventory == this && Pipeline.DEBUG_PIPE) {
                         var fuelRegistry = world == null ? null : world.getFuelRegistry();
 
                         Draw.text(
@@ -246,10 +236,10 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
                 // If the destination stack is empty, we can just set its content to the item stack in the source container.
                 if (destinationStack.isEmpty()) {
                     // Important to copy otherwise its count will also be set to 0.
-                    destinationInventory.inventory().setStack(destinationSlotIndex, sourceStack.copy());
+                    destinationInventory.setStack(destinationSlotIndex, sourceStack.copy());
 
                     sourceStack.setCount(0);
-                    sourceInventory.inventory().setStack(sourceSlotIndex, sourceStack);
+                    sourceInventory.setStack(sourceSlotIndex, sourceStack);
 
                     // Next item in the source container.
                     break;
@@ -264,8 +254,8 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
                     destinationStack.setCount(destinationCount);
                     sourceStack.setCount(remainderCount);
 
-                    destinationInventory.inventory().setStack(destinationSlotIndex, destinationStack);
-                    sourceInventory.inventory().setStack(sourceSlotIndex, sourceStack);
+                    destinationInventory.setStack(destinationSlotIndex, destinationStack);
+                    sourceInventory.setStack(sourceSlotIndex, sourceStack);
 
                     // In case the stack has been completely used we can break from it so we can check for the next stack in
                     // the source container.
@@ -277,48 +267,29 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
         }
     }
 
+    public static @Nullable Inventory getInventory(Inventory container, World world, BlockPos position, BlockState blockState) {
+        // If the block is a chest, we know it has a double inventory so we want to get it.
+        if (blockState.getBlock() instanceof ChestBlock chestBlock) {
+            container = ChestBlock.getInventory(chestBlock, blockState, world, position, true);
+
+            // The container should never be null but in the case it is, we don't want to keep going.
+            if (container == null) {
+                Draw.text(
+                        "Chest block container is null!",
+                        new double3(position).add(0.5, 1.5, 0.5),
+                        0xffff5555
+                );
+
+                return null;
+            }
+        }
+
+        return container;
+    }
+
     // endregion
 
     // region Structures
-
-    public record InventoryData(Inventory inventory, CanExtractFromInventory canBeExtracted) {
-        public static @Nullable InventoryData get(Inventory container, World world, BlockPos position, BlockState blockState) {
-            // Get the available slots from the sided inventory instead of the normal one.
-            if (container instanceof SidedInventory sidedInventory) {
-                return new InventoryData(container, sidedInventory::canExtract);
-            }
-
-            // If the block is a chest, we know it has a double inventory so we want to get it.
-            if (blockState.getBlock() instanceof ChestBlock chestBlock) {
-                container = ChestBlock.getInventory(chestBlock, blockState, world, position, true);
-
-                // The container should never be null but in the case it is, we don't want to keep going.
-                if (container == null) {
-                    Draw.text(
-                            "Chest block container is null!",
-                            new double3(position).add(0.5, 1.5, 0.5),
-                            0xffff5555
-                    );
-
-                    return null;
-                }
-            }
-
-            // We need an effectively final size so we can cache it in a variable.
-            final int size = container.size();
-            return new InventoryData(container, (slot, stack, direction) -> slot >= 0 && slot < size);
-        }
-    }
-
-    @FunctionalInterface
-    public interface CanExtractFromInventory {
-        /// Returns whether the given stack can be removed from this inventory at the specified slot position from the given
-        /// direction.
-        /// @return whether the given stack can be removed from this inventory at the specified slot position from the given
-        /// direction.
-        @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-        boolean canExtract(int slot, ItemStack stack, Direction dir);
-    }
 
     public record ConnectionData(@Nullable InventoryWithPosition source, @NotNull InventoryWithPosition[] connections) {
         public static ConnectionData get(World world, BlockPos position, BlockState blockState) {
