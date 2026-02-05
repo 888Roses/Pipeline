@@ -148,7 +148,7 @@ public class PipeBlock extends BlockWithEntity {
             if (clickedPipeForward.getAxis() == currentForward.getAxis()) {
                 currentForward = clickedPipeForward;
             } else {
-                currentForward = side.getOpposite();
+                currentForward = side;
             }
         }
 

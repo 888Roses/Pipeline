@@ -149,18 +149,28 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
             }
 
             Inventory sourceInventory = getInventory(this, world, position, blockState);
+            boolean hasExtracted = false;
 
             final int batchSize = math.min(stack.getCount(), BATCH_SIZE);
+            Direction direction = Direction.fromVector(connection.position().subtract(position), Direction.NORTH);
+
             for (int j = 0; j < batchSize; j++) {
-                ItemStack extractedStack = stack.split(1);
-                extractItems(sourceInventory, connectionInventory, extractedStack, i, PipeBlock.getForward(blockState).getOpposite());
+                int v = Math.min(1, stack.getCount());
+                ItemStack extractedStack = stack.copyWithCount(v);
+                if (extractItems(sourceInventory, connectionInventory, extractedStack, i, direction.getOpposite())) {
+                    stack.decrement(v);
+                    hasExtracted = true;
+                }
 
                 if (stack.isEmpty()) {
                     break;
                 }
             }
 
-            break;
+            if (hasExtracted) {
+                Draw.text("Extracted!", new double3(position).add(0.5, 1, 0.5));
+                break;
+            }
         }
     }
 
@@ -188,17 +198,25 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
             importItemDelay += ITEM_DELAY;
             markDirty();
 
+            boolean hasExtracted = false;
+
             final int maxSize = math.min(stack.getCount(), BATCH_SIZE);
             for (int ignored = 0; ignored < maxSize; ignored++) {
-                ItemStack extractedStack = stack.split(1);
-                extractItems(srcInv, dstInv, extractedStack, i, PipeBlock.getForward(blockState));
+                int v = Math.min(1, stack.getCount());
+                ItemStack extractedStack = stack.copyWithCount(v);
+                if (extractItems(srcInv, dstInv, extractedStack, i, PipeBlock.getForward(blockState))) {
+                    stack.decrement(v);
+                    hasExtracted = true;
+                }
 
                 if (stack.isEmpty()) {
                     break;
                 }
             }
 
-            break;
+            if (hasExtracted) {
+                break;
+            }
         }
     }
 
@@ -229,9 +247,9 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
 
                 boolean canExtract = sidedInventory.canExtract(sourceSlotIndex, sourceStack, direction);
 
-                if (sourceInventory == this && Pipeline.DEBUG_PIPE_PERMS) {
+                if (sourceInventory != this && Pipeline.DEBUG_PIPE_PERMS) {
                     Draw.text(
-                            "(" + direction + ") Is Available " + isAvailableSlot + " Can Extract: " + canExtract,
+                            "(" + direction + ") " + sourceSlotIndex + " Is Available " + isAvailableSlot + " Can Extract: " + canExtract,
                             new double3(pos)
                                     .add(0.5, 1 + destinationSlotIndex * 0.25, 0.5)
                                     .add(direction.getAxis().isVertical()
@@ -258,7 +276,7 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
 
                 boolean canInsert = sidedInventory.canInsert(destinationSlotIndex, sourceStack, direction);
 
-                if (sourceInventory == this && Pipeline.DEBUG_PIPE_PERMS) {
+                if (sourceInventory != this && Pipeline.DEBUG_PIPE_PERMS) {
                     var fuelRegistry = world == null ? null : world.getFuelRegistry();
 
                     Draw.text(
@@ -415,7 +433,8 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
                     0xff55ff55
             );
 
-            drawCollisionShape(world, connectionData.source(), 0xff55ff55);
+            drawCollisionShape(world, connectionData.source(), 0xff55ff55, 0.015f);
+            drawCollisionShape(world, new InventoryWithPosition(null, position), 0xff55ff55, 0.01f);
         }
 
         for (InventoryWithPosition connection : connectionData.connections()) {
@@ -427,10 +446,11 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
                 color = 0xff55aaff;
             }
 
-            drawCollisionShape(world, connection, color);
+            drawCollisionShape(world, connection, color, 0.01f);
 
             Direction direction = Direction.fromVector(connection.position().subtract(position), Direction.NORTH);
-            color = direction.getOffsetX() > 0 || direction.getOffsetY() > 0 || direction.getOffsetZ() > 0 ? 0xff5555ff : 0xffff5555;
+            // color = direction.getOffsetX() > 0 || direction.getOffsetY() > 0 || direction.getOffsetZ() > 0 ? 0xff5555ff : 0xffff5555;
+            color = 0xff5555ff;
 
             Draw.arrow(
                     new double3(position).add(0.5, 1.05, 0.5),
@@ -440,12 +460,12 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
         }
     }
 
-    private static void drawCollisionShape(World world, InventoryWithPosition inventoryWithPosition, int color) {
-        drawCollisionShape(world, inventoryWithPosition.position(), inventoryWithPosition.getBlockState(world), color);
+    private static void drawCollisionShape(World world, InventoryWithPosition inventoryWithPosition, int color, float offset) {
+        drawCollisionShape(world, inventoryWithPosition.position(), inventoryWithPosition.getBlockState(world), color, offset);
     }
 
     // TODO: Use the default Geode#drawBlockState instead when it'll be added.
-    private static void drawCollisionShape(World world, BlockPos position, BlockState blockState, int color) {
+    private static void drawCollisionShape(World world, BlockPos position, BlockState blockState, int color, float offset) {
         VoxelShape voxelShape = blockState.getCollisionShape(world, position);
 
         if (voxelShape.isEmpty()) {
@@ -454,7 +474,7 @@ public class PipeBlockEntity extends LockableContainerBlockEntity {
 
         Box boundingBox = voxelShape.getBoundingBox();
         double3 boundingBoxSize = new double3(boundingBox.getLengthX(), boundingBox.getLengthY(), boundingBox.getLengthZ());
-        Draw.box(new double3(position).add(boundingBox.getCenter()), boundingBoxSize.add(0.01), color);
+        Draw.box(new double3(position).add(boundingBox.getCenter()), boundingBoxSize.add(offset), color);
     }
 
     // endregion
