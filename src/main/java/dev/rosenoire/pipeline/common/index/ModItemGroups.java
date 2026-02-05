@@ -8,7 +8,8 @@ import static dev.rosenoire.pipeline.common.Pipeline.geode;
 public interface ModItemGroups {
     GeodeItemGroup PIPELINE = geode.registerGroup("pipeline",
             ItemGroupBuilder.of().withIcon(ModItems.COPPER_PIPE::getDefaultStack),
-            ModItems.COPPER_PIPE
+            ModItems.COPPER_PIPE,
+            ModItems.COPPER_PIPE_CONTROLLER
     );
 
     static void register() {

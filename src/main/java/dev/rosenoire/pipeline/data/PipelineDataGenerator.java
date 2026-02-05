@@ -32,6 +32,7 @@ public class PipelineDataGenerator implements DataGeneratorEntrypoint {
             Pipeline.log.info("PipelineDataGenerator.Generator#generate");
 
             addItem(ModItems.COPPER_PIPE).autoTranslate();
+            addItem(ModItems.COPPER_PIPE_CONTROLLER).autoTranslate();
             addItemGroup(ModItemGroups.PIPELINE).autoTranslate();
 
             addBlock(ModBlocks.COPPER_PIPE)
