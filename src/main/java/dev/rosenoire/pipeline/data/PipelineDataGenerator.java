@@ -2,6 +2,7 @@ package dev.rosenoire.pipeline.data;
 
 import dev.rosenoire.pipeline.common.Pipeline;
 import dev.rosenoire.pipeline.common.block.CopperPipeBlock;
+import dev.rosenoire.pipeline.common.block.PipeBlock;
 import dev.rosenoire.pipeline.common.index.ModBlocks;
 import dev.rosenoire.pipeline.common.index.ModItemGroups;
 import dev.rosenoire.pipeline.common.index.ModItems;
@@ -37,25 +38,25 @@ public class PipelineDataGenerator implements DataGeneratorEntrypoint {
                     .autoTranslate()
                     .multipartBlockstate(x -> x
                             .with("block/copper_pipe")
-                            .with(CopperPipeBlock.NORTH, true, "block/copper_pipe_straight")
-                            .with(CopperPipeBlock.SOUTH, true, "block/copper_pipe_straight_south")
+                            .with(PipeBlock.NORTH, true, "block/copper_pipe_straight")
+                            .with(PipeBlock.SOUTH, true, "block/copper_pipe_straight_south")
                             .with(
-                                    CopperPipeBlock.EAST, true,
+                                    PipeBlock.EAST, true,
                                     model -> model.withRotationY(AxisRotation.R90),
                                     "block/copper_pipe_straight"
                             )
                             .with(
-                                    CopperPipeBlock.WEST, true,
+                                    PipeBlock.WEST, true,
                                     model -> model.withRotationY(AxisRotation.R90),
                                     "block/copper_pipe_straight_south"
                             )
                             .with(
-                                    CopperPipeBlock.UP, true,
+                                    PipeBlock.UP, true,
                                     model -> model.withRotationY(AxisRotation.R90),
                                     "block/copper_pipe_straight_up"
                             )
                             .with(
-                                    CopperPipeBlock.DOWN, true,
+                                    PipeBlock.DOWN, true,
                                     model -> model
                                             .withRotationX(AxisRotation.R90),
                                     "block/copper_pipe_straight_down"
