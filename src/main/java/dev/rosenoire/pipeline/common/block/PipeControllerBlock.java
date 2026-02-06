@@ -1,9 +1,11 @@
 package dev.rosenoire.pipeline.common.block;
 
 import com.mojang.serialization.MapCodec;
+import dev.rosenoire.pipeline.common.util.PipelineUtil;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.BlockWithEntity;
+import net.minecraft.block.ShapeContext;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.mob.PiglinBrain;
 import net.minecraft.entity.player.PlayerEntity;
@@ -17,6 +19,9 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.shape.VoxelShape;
+import net.minecraft.util.shape.VoxelShapes;
+import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.Nullable;
@@ -52,6 +57,20 @@ public class PipeControllerBlock extends BlockWithEntity {
         }
 
         return ActionResult.SUCCESS;
+    }
+
+    // endregion
+
+    // region Shape
+
+    @Override
+    protected VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
+        return PipelineUtil.cube(2, 0, 2, 12, 16, 12);
+    }
+
+    @Override
+    protected boolean isShapeFullCube(BlockState state, BlockView world, BlockPos pos) {
+        return false;
     }
 
     // endregion
