@@ -8,6 +8,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUsageContext;
+import net.minecraft.item.tooltip.TooltipData;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
@@ -15,6 +16,8 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+
+import java.util.Optional;
 
 public class PipeControllerItem extends BlockItem {
     public PipeControllerItem(Block block, Settings settings) {
@@ -57,5 +60,10 @@ public class PipeControllerItem extends BlockItem {
         }
 
         return super.useOnBlock(context);
+    }
+
+    @Override
+    public Optional<TooltipData> getTooltipData(ItemStack stack) {
+        return Optional.of(new DescriptionTooltipData(stack.getItem().getTranslationKey() + ".desc"));
     }
 }

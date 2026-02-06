@@ -33,9 +33,10 @@ public class PipelineDataGenerator implements DataGeneratorEntrypoint {
         protected void generate() {
             Pipeline.log.info("PipelineDataGenerator.Generator#generate");
 
-            addItem(ModItems.COPPER_PIPE).autoTranslate();
-            addItem(ModItems.COPPER_PIPE_CONTROLLER).autoTranslate();
             addItemGroup(ModItemGroups.PIPELINE).autoTranslate();
+
+            addBlock(ModBlocks.COPPER_PIPE_CONTROLLER)
+                    .autoTranslate();
 
             addBlock(ModBlocks.COPPER_PIPE)
                     .autoTranslate()
@@ -71,6 +72,7 @@ public class PipelineDataGenerator implements DataGeneratorEntrypoint {
     @Override
     public void onInitializeDataGenerator(FabricDataGenerator fabricDataGenerator) {
         FabricDataGenerator.Pack pack = fabricDataGenerator.createPack();
-        pack.addProvider(Generator::new);
+        // Disabled datagen for now.
+        // pack.addProvider(Generator::new);
     }
 }
