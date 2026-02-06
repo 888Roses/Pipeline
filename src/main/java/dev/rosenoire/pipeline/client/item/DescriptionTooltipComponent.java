@@ -21,7 +21,7 @@ public class DescriptionTooltipComponent implements TooltipComponent {
 
     @Override
     public int getWidth(TextRenderer textRenderer) {
-        return 96;
+        return Pipeline.MAX_TOOLTIP_WIDTH;
     }
 
     @Override
@@ -30,10 +30,10 @@ public class DescriptionTooltipComponent implements TooltipComponent {
     }
 
     private void drawEmptyDescription(int x, int y, TextRenderer textRenderer, DrawContext drawContext) {
-        drawContext.drawWrappedTextWithShadow(textRenderer, description, x, y, 96, 0xffAAAAAA);
+        drawContext.drawWrappedTextWithShadow(textRenderer, description, x, y, Pipeline.MAX_TOOLTIP_WIDTH, 0xffAAAAAA);
     }
 
     private int getDescriptionHeight(TextRenderer textRenderer) {
-        return textRenderer.wrapLines(description, 96).size() * 9;
+        return textRenderer.wrapLines(description, Pipeline.MAX_TOOLTIP_WIDTH).size() * 9;
     }
 }
