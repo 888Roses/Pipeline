@@ -45,7 +45,7 @@ public class PipeControllerBlock extends BlockWithEntity {
     protected ActionResult onUseWithItem(ItemStack itemStack, BlockState blockState, World world, BlockPos position, PlayerEntity player, Hand hand, BlockHitResult hitResult) {
         if (itemStack.isIn(ItemTags.PICKAXES)) {
             if (world.getBlockEntity(position) instanceof PipeControllerBlockEntity pipeControllerBlockEntity) {
-                pipeControllerBlockEntity.isReverseMode=!pipeControllerBlockEntity.isReverseMode;
+                pipeControllerBlockEntity.isReverseMode = !pipeControllerBlockEntity.isReverseMode;
                 pipeControllerBlockEntity.markDirty();
             }
 
