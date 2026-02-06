@@ -1,21 +1,20 @@
 package dev.rosenoire.pipeline.common.block;
 
 import dev.rosenoire.pipeline.common.index.ModBlockEntities;
+import dev.rosenoire.pipeline.common.util.TagHelper;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.ChestBlockEntity;
 import net.minecraft.entity.ContainerUser;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.tag.TagKey;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
+
+import java.util.List;
+import java.util.Optional;
 
 public class PipeControllerBlockEntity extends ChestBlockEntity {
     public boolean isReverseMode;
@@ -31,11 +30,19 @@ public class PipeControllerBlockEntity extends ChestBlockEntity {
 
         boolean isContained = containsAny(filterStack -> {
             if (filterStack.isOf(Items.NAME_TAG) && filterStack.getCustomName() != null) {
-                String tagKeyName = filterStack.getCustomName().getString().substring(1);
-                TagKey<Item> tag = TagKey.of(RegistryKeys.ITEM, Identifier.of(tagKeyName));
-                if (stack.isIn(tag)) {
-                    return true;
+                Optional<List<Item>> tagContent = TagHelper.getItemsFromTagItemStack(filterStack);
+
+                if (tagContent.isEmpty()) {
+                    return false;
                 }
+
+                List<Item> items = tagContent.get();
+
+                if (items.isEmpty()) {
+                    return false;
+                }
+
+                return items.contains(stack.getItem());
             }
 
             return ItemStack.areItemsAndComponentsEqual(stack, filterStack);

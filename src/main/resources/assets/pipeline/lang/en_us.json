@@ -1,6 +1,7 @@
 {
   "item.pipeline.copper_pipe": "Copper Pipe",
   "item.pipeline.copper_pipe_controller": "Copper Pipe Controller",
-  "item.pipeline.copper_pipe_controller.desc": "Controls what item can go through a pipe.",
+  "item.pipeline.copper_pipe_controller.desc": "Controls what item can go through a pipe",
+  "item.pipeline.tag.invalid": "Invalid tag",
   "itemgroup.pipeline.pipeline": "Pipeline"
 }

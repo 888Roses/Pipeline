@@ -4,8 +4,10 @@
   "package": "dev.rosenoire.pipeline.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "ItemMixin"
   ],
   "client": [
+    "HandledScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1
