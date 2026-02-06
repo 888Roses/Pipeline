@@ -11,10 +11,17 @@ import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemPlacementContext;
+import net.minecraft.item.ItemStack;
+import net.minecraft.registry.tag.ItemTags;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.state.property.EnumProperty;
 import net.minecraft.state.property.Properties;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
+import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.random.Random;
@@ -34,6 +41,22 @@ public class PipeBlock extends BlockWithEntity {
         super(settings);
         setDefaultState();
     }
+
+    // region Use
+
+    @Override
+    protected ActionResult onUseWithItem(ItemStack itemStack, BlockState blockState, World world, BlockPos position, PlayerEntity player, Hand hand, BlockHitResult hitResult) {
+        if (itemStack.isIn(ItemTags.PICKAXES)) {
+            world.setBlockState(position, blockState.with(FORWARD, getForward(blockState).getOpposite()));
+            world.onBlockStateChanged(position, blockState, world.getBlockState(position));
+            world.playSound(null, position, SoundEvents.ENTITY_COPPER_GOLEM_STEP, SoundCategory.BLOCKS);
+            return ActionResult.SUCCESS;
+        }
+
+        return super.onUseWithItem(itemStack, blockState, world, position, player, hand, hitResult);
+    }
+
+    // endregion
 
     // region Shape
 
