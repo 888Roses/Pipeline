@@ -65,9 +65,11 @@ public class PipeControllerRenderer implements BlockEntityRenderer<PipeControlle
                 renderLayer,
                 state.lightmapCoordinates,
                 OverlayTexture.DEFAULT_UV,
-                0,
+                0x0000000,
                 state.crumblingOverlay
         );
+
+        matrices.scale(1.01f,1.01f,1.01f);
 
         queue.submitModel(
                 statueModel,
@@ -76,7 +78,7 @@ public class PipeControllerRenderer implements BlockEntityRenderer<PipeControlle
                 eyeRenderLayer,
                 LightmapTextureManager.MAX_LIGHT_COORDINATE,
                 OverlayTexture.DEFAULT_UV,
-                0x000000,
+                0x00000000,
                 state.crumblingOverlay
         );
 
