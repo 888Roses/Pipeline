@@ -45,6 +45,31 @@ public class PipeBlock extends BlockWithEntity {
     // region Use
 
     @Override
+    protected ActionResult onUse(BlockState state, World world, BlockPos position, PlayerEntity player, BlockHitResult hit) {
+        if (player.isSneaking()) {
+            if (world.getBlockEntity(position) instanceof PipeBlockEntity blockEntity) {
+                if (blockEntity.isEmpty()) {
+                    world.playSound(null, position, SoundEvents.BLOCK_DECORATED_POT_INSERT_FAIL, SoundCategory.BLOCKS);
+                    return ActionResult.FAIL;
+                }
+
+                for(ItemStack stack : blockEntity.getHeldStacks()) {
+                    player.giveOrDropStack(stack);
+                }
+
+                blockEntity.clear();
+                world.playSound(null, position, SoundEvents.BLOCK_DECORATED_POT_INSERT, SoundCategory.BLOCKS);
+                return ActionResult.SUCCESS;
+            }
+
+            world.playSound(null, position, SoundEvents.BLOCK_DECORATED_POT_INSERT_FAIL, SoundCategory.BLOCKS);
+            return ActionResult.FAIL;
+        }
+
+        return super.onUse(state, world, position, player, hit);
+    }
+
+    @Override
     protected ActionResult onUseWithItem(ItemStack itemStack, BlockState blockState, World world, BlockPos position, PlayerEntity player, Hand hand, BlockHitResult hitResult) {
         if (itemStack.isIn(ItemTags.PICKAXES)) {
             world.setBlockState(position, blockState.with(FORWARD, getForward(blockState).getOpposite()));

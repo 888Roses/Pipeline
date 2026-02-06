@@ -10,12 +10,17 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.mob.PiglinBrain;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemPlacementContext;
+import net.minecraft.item.ItemStack;
+import net.minecraft.registry.tag.ItemTags;
 import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.EnumProperty;
 import net.minecraft.state.property.Properties;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -34,16 +39,21 @@ public class PipeControllerBlock extends BlockWithEntity {
         setDefaultState(getDefaultState().with(DIRECTION, Direction.NORTH));
     }
 
-    // region Block Entity
+    // region Use
 
     @Override
-    protected MapCodec<? extends BlockWithEntity> getCodec() {
-        return createCodec(PipeControllerBlock::new);
-    }
+    protected ActionResult onUseWithItem(ItemStack itemStack, BlockState blockState, World world, BlockPos position, PlayerEntity player, Hand hand, BlockHitResult hitResult) {
+        if (itemStack.isIn(ItemTags.PICKAXES)) {
+            if (world.getBlockEntity(position) instanceof PipeControllerBlockEntity pipeControllerBlockEntity) {
+                pipeControllerBlockEntity.isReverseMode=!pipeControllerBlockEntity.isReverseMode;
+                pipeControllerBlockEntity.markDirty();
+            }
 
-    @Override
-    public @Nullable BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
-        return new PipeControllerBlockEntity(pos, state);
+            world.playSound(null, position, SoundEvents.ENTITY_COPPER_GOLEM_STEP, SoundCategory.BLOCKS);
+            return ActionResult.SUCCESS;
+        }
+
+        return super.onUseWithItem(itemStack, blockState, world, position, player, hand, hitResult);
     }
 
     @Override
@@ -57,6 +67,20 @@ public class PipeControllerBlock extends BlockWithEntity {
         }
 
         return ActionResult.SUCCESS;
+    }
+
+    // endregion
+
+    // region Block Entity
+
+    @Override
+    protected MapCodec<? extends BlockWithEntity> getCodec() {
+        return createCodec(PipeControllerBlock::new);
+    }
+
+    @Override
+    public @Nullable BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
+        return new PipeControllerBlockEntity(pos, state);
     }
 
     // endregion

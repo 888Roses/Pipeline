@@ -11,6 +11,8 @@ import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 
 public class PipeControllerBlockEntity extends ChestBlockEntity {
+    public boolean isReverseMode;
+
     public PipeControllerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.PIPE_CONTROLLER, pos, state);
     }
@@ -20,12 +22,12 @@ public class PipeControllerBlockEntity extends ChestBlockEntity {
             return true;
         }
 
-        return !containsAny(otherStack -> ItemStack.areItemsAndComponentsEqual(stack, otherStack));
+        return isReverseMode != containsAny(otherStack -> ItemStack.areItemsAndComponentsEqual(stack, otherStack));
     }
 
     @Override
     public Text getName() {
-        return Text.literal("Pipe Controller");
+        return Text.literal("Filter");
     }
 
     @Override

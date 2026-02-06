@@ -1,5 +1,6 @@
 package dev.rosenoire.pipeline.client.block.renderer;
 
+import dev.rosenoire.pipeline.common.Pipeline;
 import dev.rosenoire.pipeline.common.block.PipeControllerBlock;
 import dev.rosenoire.pipeline.common.block.PipeControllerBlockEntity;
 import net.minecraft.block.BlockState;
@@ -20,6 +21,7 @@ import net.minecraft.client.render.state.CameraRenderState;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.passive.CopperGolemOxidationLevel;
 import net.minecraft.entity.passive.CopperGolemOxidationLevels;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import org.jspecify.annotations.Nullable;
@@ -28,6 +30,9 @@ import org.jspecify.annotations.Nullable;
 public class PipeControllerRenderer implements BlockEntityRenderer<PipeControllerBlockEntity, PipeControllerRenderer.State> {
     private final BlockEntityRendererFactory.Context context;
     private final CopperGolemStatueModel statueModel;
+
+    private static final Identifier EYE_FILTER_OUT = Pipeline.geode.id("textures/block/copper_pipe_controller_eyes_out.png");
+    private static final Identifier EYE_FILTER_IN = Pipeline.geode.id("textures/block/copper_pipe_controller_eyes_in.png");
 
     public PipeControllerRenderer(BlockEntityRendererFactory.Context context) {
         this.context = context;
@@ -47,6 +52,7 @@ public class PipeControllerRenderer implements BlockEntityRenderer<PipeControlle
 
         BlockState blockState = blockEntity.getCachedState();
         state.direction = blockState.get(PipeControllerBlock.DIRECTION);
+        state.isReverseMode = blockEntity.isReverseMode;
     }
 
     @Override
@@ -56,7 +62,7 @@ public class PipeControllerRenderer implements BlockEntityRenderer<PipeControlle
 
         CopperGolemOxidationLevel golem = CopperGolemOxidationLevels.get(Oxidizable.OxidationLevel.UNAFFECTED);
         RenderLayer renderLayer = RenderLayers.entityCutoutNoCull(golem.texture());
-        RenderLayer eyeRenderLayer = RenderLayers.entityCutoutNoCull(golem.eyeTexture());
+        RenderLayer eyeRenderLayer = RenderLayers.entityCutoutNoCull(state.isReverseMode ? EYE_FILTER_OUT : EYE_FILTER_IN);
 
         queue.submitModel(
                 statueModel,
@@ -87,5 +93,6 @@ public class PipeControllerRenderer implements BlockEntityRenderer<PipeControlle
 
     public static class State extends BlockEntityRenderState {
         public Direction direction;
+        public boolean isReverseMode;
     }
 }
