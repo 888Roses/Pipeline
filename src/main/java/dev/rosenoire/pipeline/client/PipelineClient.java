@@ -21,7 +21,7 @@ public class PipelineClient implements ClientModInitializer {
         ModTooltipComponents.register();
 
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.REDSTONE).register(entries -> {
-            entries.addAfter(Items.WAXED_OXIDIZED_COPPER_BULB, ModItems.COPPER_PIPE, ModItems.COPPER_PIPE_CONTROLLER);
+            entries.addAfter(Items.WAXED_COPPER_CHEST, ModItems.COPPER_PIPE, ModItems.COPPER_PIPE_CONTROLLER);
         });
 
         geode.register();
