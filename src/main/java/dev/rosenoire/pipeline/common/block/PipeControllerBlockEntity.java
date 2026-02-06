@@ -31,7 +31,7 @@ public class PipeControllerBlockEntity extends ChestBlockEntity {
 
         boolean isContained = containsAny(filterStack -> {
             if (filterStack.isOf(Items.NAME_TAG) && filterStack.getCustomName() != null) {
-                String tagKeyName = filterStack.getCustomName().getString();
+                String tagKeyName = filterStack.getCustomName().getString().substring(1);
                 TagKey<Item> tag = TagKey.of(RegistryKeys.ITEM, Identifier.of(tagKeyName));
                 if (stack.isIn(tag)) {
                     return true;
